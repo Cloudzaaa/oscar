@@ -12,17 +12,11 @@ print(f"{settings.get('assistant_name')} начал свою работу ...")
 
 
 def va_respond(voice: str):
-    print(voice)
-    print(options.get('commands').keys())
     if voice.startswith(options.get('alias')):
         # обращаются к ассистенту
         cmd = recognize_cmd(filter_cmd(voice))
-        print('command', cmd)
-        print(options.get('commands').keys())
-
 
         if cmd['cmd'] not in options.get('commands').keys():
-            print('не понятно')
             tts.va_speak("Что?")
         else:
             execute_cmd(cmd['cmd'])
@@ -43,13 +37,10 @@ def filter_cmd(raw_voice: str):
 def recognize_cmd(cmd: str):
     rc = {'cmd': '', 'percent': 0}
     for c, expression in options.get('commands').items():
-        print('cmd', cmd)
-        print('val', expression)
         for char in expression:
-            print('char:', char)
             vrt = fuzz.ratio(cmd, char)
             if vrt > rc['percent']:
-                rc['cmd'] = cmd
+                rc['cmd'] = c
                 rc['percent'] = vrt
 
     return rc
@@ -59,7 +50,9 @@ def execute_cmd(cmd: str):
     if cmd == 'help':
         # help
         text = "Я умею: ..."
-        text += "произносить время"
+        text += "здороваться ..."
+        text += "произносить время ..."
+        text += "и нести чушь."
         tts.va_speak(text)
         pass
     elif cmd == 'ctime':
