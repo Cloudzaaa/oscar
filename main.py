@@ -1,70 +1,77 @@
-import time
-import speech_recognition as sr
-
+import config
+import stt
+import tts
 from fuzzywuzzy import fuzz
-from commands.commands import ctime_command, greeting_command
-from configuration import configuration
+import datetime
+from num2t4ru import num2text
 
-options = configuration["options"]
+settings = config.settings
+options = settings.get('options')
 
-
-def callback(recognizer, audio):
-    try:
-        voice = recognizer.recognize_google(audio, language="ru-RU").lower()
-        print("[log] Распознано: " + voice)
-
-        if voice.startswith(options["alias"]):
-            command = voice
-
-            for alias in options['alias']:
-                command = command.replace(alias, "").strip()
-
-            for action in options['actions']:
-                command = command.replace(action, "").strip()
-
-            # распознаем и выполняем команду
-            print(command)
-            command = recognize_command(command)
-            execute_command(command['command'])
-
-    except sr.UnknownValueError:
-        print("[log] Голос не распознан!")
-    except sr.RequestError as e:
-        print("[log] Неизвестная ошибка, проверьте интернет!")
+print(f"{settings.get('assistant_name')} начал свою работу ...")
 
 
-def recognize_command(command):
-    recognized_command = {'command': '', 'percent': 0}
-    for cmd, v in options['commands'].items():
-
-        for x in v:
-            vrt = fuzz.ratio(command, x)
-            if vrt > recognized_command['percent']:
-                recognized_command['command'] = cmd
-                recognized_command['percent'] = vrt
-
-    return recognized_command
+def va_respond(voice: str):
+    print(voice)
+    print(options.get('commands').keys())
+    if voice.startswith(options.get('alias')):
+        # обращаются к ассистенту
+        cmd = recognize_cmd(filter_cmd(voice))
+        print('command', cmd)
+        print(options.get('commands').keys())
 
 
-def execute_command(command):
-    if command == 'ctime':
-        ctime_command()
-
-    elif command == 'greeting':
-        greeting_command()
-
-    else:
-        print('Команда не распознана, повторите!')
+        if cmd['cmd'] not in options.get('commands').keys():
+            print('не понятно')
+            tts.va_speak("Что?")
+        else:
+            execute_cmd(cmd['cmd'])
 
 
-# запуск
-recognizerInstance = sr.Recognizer()
-mic = sr.Microphone(device_index=1)
+def filter_cmd(raw_voice: str):
+    cmd = raw_voice
 
-with mic as source:
-    recognizerInstance.adjust_for_ambient_noise(source)
+    for word in options.get('alias'):
+        cmd = cmd.replace(word, "").strip()
 
-greeting_command()
+    for word in options.get('actions'):
+        cmd = cmd.replace(word, "").strip()
 
-stop_listening = recognizerInstance.listen_in_background(mic, callback)
-while True: time.sleep(0.1) # infinity loop
+    return cmd
+
+
+def recognize_cmd(cmd: str):
+    rc = {'cmd': '', 'percent': 0}
+    for c, expression in options.get('commands').items():
+        print('cmd', cmd)
+        print('val', expression)
+        for char in expression:
+            print('char:', char)
+            vrt = fuzz.ratio(cmd, char)
+            if vrt > rc['percent']:
+                rc['cmd'] = cmd
+                rc['percent'] = vrt
+
+    return rc
+
+
+def execute_cmd(cmd: str):
+    if cmd == 'help':
+        # help
+        text = "Я умею: ..."
+        text += "произносить время"
+        tts.va_speak(text)
+        pass
+    elif cmd == 'ctime':
+        # current time
+        now = datetime.datetime.now()
+        text = "Сейч+ас " + num2text(now.hour) + " " + num2text(now.minute)
+        tts.va_speak(text)
+    elif cmd == 'greeting':
+        # current time
+        text = "Приветствую создателЯ!"
+        tts.va_speak(text)
+
+
+# начать прослушивание команд
+stt.va_listen(va_respond)

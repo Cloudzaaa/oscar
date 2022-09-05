@@ -1,12 +1,14 @@
+# DEPRECATED VER
 import datetime
 import pyttsx3
 
-from configuration import configuration
+from config import configuration
 
 speak_engine = pyttsx3.init()
 voices = speak_engine.getProperty('voices')
 speak_engine.setProperty('voice', voices[2].id)
 speak_engine.setProperty('rate', 140)
+speak_engine.save_to_file("Приветствую " + configuration.get("user_name", "") + ". Скорее бы стать еще лучше.", 'greeting_ver_1.mp3')
 
 
 def speak(what):
@@ -24,4 +26,11 @@ def ctime_command():
 
 # поздороваться
 def greeting_command():
-    speak("Приветствую " + configuration.get("user_name", ""))
+    text = "Приветствую " + configuration.get("user_name", "") + ". Скорее бы стать еще лучше."
+    speak(text)
+    speak_engine.save_to_file(text, 'greeting_ver_1.mp3')
+    print('saved')
+
+
+greeting_command()
+
